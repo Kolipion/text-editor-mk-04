@@ -1,77 +1,70 @@
-// =============================
+// ===================================
 // EmailJS initialisieren
-// =============================
+// ===================================
 
 emailjs.init({
     publicKey: "8s5AdO0IZ99pi8O8d"
 });
 
 
-// =============================
+// ===================================
 // Einstellungen
-// =============================
+// ===================================
 
 const MAX_CHARS = 90;
+const MAX_MESSAGE_LENGTH = 5000;
 
 const editor = document.getElementById("editor");
 
 
-// =============================
-// Text formatieren
-// =============================
+// ===================================
+// Text auf 90 Zeichen formatieren
+// ===================================
 
 function formatText(text) {
 
-    // Vorhandene Absätze behalten
     const paragraphs = text.split("\n");
 
     let result = [];
 
     for (let paragraph of paragraphs) {
 
-        // Leere Zeilen behalten
         if (paragraph === "") {
             result.push("");
             continue;
         }
 
-        // Wörter, Leerzeichen und TABs trennen
-        const tokens = paragraph.match(/(\t+| +|\S+)/g) || [];
+        const tokens =
+            paragraph.match(/(\t+| +|\S+)/g) || [];
 
         let line = "";
         let lineLength = 0;
 
         for (let token of tokens) {
 
-            // TAB = 4 Zeichen
             const tokenLength =
                 token.startsWith("\t")
-                    ? token.length * 4
-                    : token.length;
+                ? token.length * 4
+                : token.length;
 
-            // Passt das Token noch hinein?
             if (lineLength + tokenLength <= MAX_CHARS) {
 
                 line += token;
                 lineLength += tokenLength;
 
-            }
+            } else {
 
-            // Zeile ist voll
-            else {
-
-                // Nur Leerzeichen/TABs werden verworfen
+                // Leerzeichen am Zeilenanfang vermeiden
                 if (/^[ \t]+$/.test(token)) {
 
-                    result.push(line);
+                    if (line !== "") {
+                        result.push(line);
+                    }
 
                     line = "";
                     lineLength = 0;
 
-                }
-
-                // Wort kommt vollständig in die nächste Zeile
-                else {
+                } else {
 
                     if (line !== "") {
                         result.push(line);
@@ -86,7 +79,6 @@ function formatText(text) {
 
         }
 
-        // Letzte Zeile speichern
         result.push(line);
 
     }
@@ -96,33 +88,117 @@ function formatText(text) {
 }
 
 
-// =============================
+// ===================================
+// Text in mehrere Teile aufteilen
+// ===================================
+
+function splitByLines(
+    text,
+    maxLength = MAX_MESSAGE_LENGTH
+) {
+
+    const lines = text.split("\n");
+
+    let parts = [];
+    let currentPart = "";
+
+    for (let line of lines) {
+
+        if (
+            currentPart.length +
+            line.length + 1 <= maxLength
+        ) {
+
+            currentPart += line + "\n";
+
+        } else {
+
+            parts.push(currentPart);
+
+            currentPart = line + "\n";
+
+        }
+
+    }
+
+    if (currentPart !== "") {
+        parts.push(currentPart);
+    }
+
+    return parts;
+
+}
+
+
+// ===================================
 // Save-Button
-// =============================
+// ===================================
 
-document.getElementById("save").addEventListener("click", function () {
+document.getElementById("save")
+.addEventListener("click", function () {
 
-    // Originaltext aus dem Editor
+    // Originaltext holen
     const originalText = editor.value;
 
-    // Nur die Kopie wird formatiert
-    const formattedText = formatText(originalText);
+    // Formatieren
+    const formattedText =
+        formatText(originalText);
+
+    // Aufteilen
+    const parts =
+        splitByLines(formattedText);
+
+
+    // Maximal 10 Teile
+    const templateParams = {
+
+        message1: parts[0] || "",
+        message2: parts[1] || "",
+        message3: parts[2] || "",
+        message4: parts[3] || "",
+        message5: parts[4] || "",
+        message6: parts[5] || "",
+        message7: parts[6] || "",
+        message8: parts[7] || "",
+        message9: parts[8] || "",
+        message10: parts[9] || ""
+
+    };
+
 
     // E-Mail verschicken
     emailjs.send(
+
         "service_godqvsl",
         "template_b2cit9p",
-        {
-            message: formattedText
-        }
+        templateParams
 
-    ).then(() => {
+    )
 
-        alert("Text wurde erfolgreich gespeichert.");
+    .then(() => {
 
-    }).catch(() => {
+        alert(
+            "Text wurde erfolgreich gespeichert."
+        );
 
-        alert("Fehler beim Speichern.");
+    })
+
+    .catch((error) => {
+
+        console.log(error);
+
+        alert(
+
+            "Fehler:\n\n" +
+
+            "Status: " +
+            error.status +
+
+            "\n\n" +
+
+            error.text
+
+        );
 
     });
 
