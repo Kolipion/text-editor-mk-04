@@ -3,7 +3,7 @@
 // =============================
 
 emailjs.init({
-    publicKey: "8s5AdO0IZ99pi8O8d"
+    publicKey: "DEIN_PUBLIC_KEY"
 });
 
 
@@ -22,19 +22,20 @@ const editor = document.getElementById("editor");
 
 function formatText(text) {
 
+    // Vorhandene Absätze behalten
     const paragraphs = text.split("\n");
 
     let result = [];
 
     for (let paragraph of paragraphs) {
 
-        // Leerzeilen beibehalten
+        // Leere Zeilen behalten
         if (paragraph === "") {
             result.push("");
             continue;
         }
 
-        // Wörter, Leerzeichen und TABs behalten
+        // Wörter, Leerzeichen und TABs trennen
         const tokens = paragraph.match(/(\t+| +|\S+)/g) || [];
 
         let line = "";
@@ -42,22 +43,24 @@ function formatText(text) {
 
         for (let token of tokens) {
 
-            // TAB entspricht 4 Zeichen
+            // TAB = 4 Zeichen
             const tokenLength =
                 token.startsWith("\t")
                     ? token.length * 4
                     : token.length;
 
-            // Passt das Token noch in die Zeile?
+            // Passt das Token noch hinein?
             if (lineLength + tokenLength <= MAX_CHARS) {
 
                 line += token;
                 lineLength += tokenLength;
 
-            } else {
+            }
 
-                // Ist das Token nur aus Leerzeichen/TABs,
-                // wird die aktuelle Zeile beendet.
+            // Zeile ist voll
+            else {
+
+                // Nur Leerzeichen/TABs werden verworfen
                 if (/^[ \t]+$/.test(token)) {
 
                     result.push(line);
@@ -65,9 +68,11 @@ function formatText(text) {
                     line = "";
                     lineLength = 0;
 
-                } else {
+                }
 
-                    // Wort kommt vollständig in die nächste Zeile.
+                // Wort kommt vollständig in die nächste Zeile
+                else {
+
                     if (line !== "") {
                         result.push(line);
                     }
@@ -81,6 +86,7 @@ function formatText(text) {
 
         }
 
+        // Letzte Zeile speichern
         result.push(line);
 
     }
@@ -96,28 +102,23 @@ function formatText(text) {
 
 document.getElementById("save").addEventListener("click", function () {
 
-    // Den Text holen
+    // Originaltext aus dem Editor
     const originalText = editor.value;
 
-    // Auf 90 Zeichen pro Zeile formatieren
+    // Nur die Kopie wird formatiert
     const formattedText = formatText(originalText);
 
-    // Optional:
-    // Der Benutzer sieht vor dem Speichern den
-    // endgültig formatierten Text.
-    editor.value = formattedText;
-
-    // E-Mail versenden
+    // E-Mail verschicken
     emailjs.send(
-        "service_godqvsl",
-        "template_b2cit9p",
+        "DEIN_SERVICE_ID",
+        "DEIN_TEMPLATE_ID",
         {
             message: formattedText
         }
 
     ).then(() => {
 
-        alert("Text wurde gespeichert.");
+        alert("Text wurde erfolgreich gespeichert.");
 
     }).catch(() => {
 
