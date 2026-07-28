@@ -3,7 +3,7 @@
 // =============================
 
 emailjs.init({
-    publicKey: "DEIN_PUBLIC_KEY"
+    publicKey: "8s5AdO0IZ99pi8O8d"
 });
 
 
@@ -110,8 +110,8 @@ document.getElementById("save").addEventListener("click", function () {
 
     // E-Mail verschicken
     emailjs.send(
-        "DEIN_SERVICE_ID",
-        "DEIN_TEMPLATE_ID",
+        "service_godqvsl",
+        "template_b2cit9p",
         {
             message: formattedText
         }
