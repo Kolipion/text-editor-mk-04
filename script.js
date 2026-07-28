@@ -1,5 +1,5 @@
 // =============================
-// EmailJS
+// EmailJS initialisieren
 // =============================
 
 emailjs.init({
@@ -8,7 +8,7 @@ emailjs.init({
 
 
 // =============================
-// Maximale Zeichen pro Zeile
+// Einstellungen
 // =============================
 
 const MAX_CHARS = 90;
@@ -17,60 +17,71 @@ const editor = document.getElementById("editor");
 
 
 // =============================
-// Formatiert den kompletten Text
+// Text formatieren
 // =============================
 
-function formatText(text){
+function formatText(text) {
 
-    // Absätze behalten
     const paragraphs = text.split("\n");
 
     let result = [];
 
-    for(let paragraph of paragraphs){
+    for (let paragraph of paragraphs) {
 
-        // Leerzeilen behalten
-        if(paragraph.trim() === ""){
+        // Leerzeilen beibehalten
+        if (paragraph === "") {
             result.push("");
             continue;
         }
 
-        const words = paragraph.split(/\s+/);
+        // Wörter, Leerzeichen und TABs behalten
+        const tokens = paragraph.match(/(\t+| +|\S+)/g) || [];
 
         let line = "";
+        let lineLength = 0;
 
-        for(let word of words){
+        for (let token of tokens) {
 
-            // Falls die Zeile noch leer ist
-            if(line === ""){
+            // TAB entspricht 4 Zeichen
+            const tokenLength =
+                token.startsWith("\t")
+                    ? token.length * 4
+                    : token.length;
 
-                line = word;
-                continue;
+            // Passt das Token noch in die Zeile?
+            if (lineLength + tokenLength <= MAX_CHARS) {
 
-            }
+                line += token;
+                lineLength += tokenLength;
 
-            // Wort passt noch hinein
-            if((line + " " + word).length <= MAX_CHARS){
+            } else {
 
-                line += " " + word;
+                // Ist das Token nur aus Leerzeichen/TABs,
+                // wird die aktuelle Zeile beendet.
+                if (/^[ \t]+$/.test(token)) {
 
-            }
+                    result.push(line);
 
-            // Wort passt nicht mehr hinein
-            else{
+                    line = "";
+                    lineLength = 0;
 
-                result.push(line);
+                } else {
 
-                line = word;
+                    // Wort kommt vollständig in die nächste Zeile.
+                    if (line !== "") {
+                        result.push(line);
+                    }
+
+                    line = token;
+                    lineLength = tokenLength;
+
+                }
 
             }
 
         }
 
-        // letzte Zeile hinzufügen
-        if(line !== ""){
-            result.push(line);
-        }
+        result.push(line);
 
     }
 
@@ -80,39 +91,28 @@ function formatText(text){
 
 
 // =============================
-// Cursor möglichst erhalten
+// Save-Button
 // =============================
 
-editor.addEventListener("input", function(){
+document.getElementById("save").addEventListener("click", function () {
 
-    const cursorPosition = this.selectionStart;
+    // Den Text holen
+    const originalText = editor.value;
 
-    const formattedText = formatText(this.value);
+    // Auf 90 Zeichen pro Zeile formatieren
+    const formattedText = formatText(originalText);
 
-    this.value = formattedText;
+    // Optional:
+    // Der Benutzer sieht vor dem Speichern den
+    // endgültig formatierten Text.
+    editor.value = formattedText;
 
-    // Cursor wieder setzen
-    this.setSelectionRange(
-        Math.min(cursorPosition, this.value.length),
-        Math.min(cursorPosition, this.value.length)
-    );
-
-});
-
-
-// =============================
-// Speichern
-// =============================
-
-document.getElementById("save").addEventListener("click", function(){
-
-    const text = editor.value;
-
+    // E-Mail versenden
     emailjs.send(
         "service_godqvsl",
         "template_b2cit9p",
         {
-            message: text
+            message: formattedText
         }
 
     ).then(() => {
