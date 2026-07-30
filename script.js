@@ -1,205 +1,95 @@
-// ===================================
 // EmailJS initialisieren
-// ===================================
-
 emailjs.init({
     publicKey: "8s5AdO0IZ99pi8O8d"
 });
 
-
-// ===================================
-// Einstellungen
-// ===================================
-
-const MAX_CHARS = 90;
-const MAX_MESSAGE_LENGTH = 5000;
-
-const editor = document.getElementById("editor");
+// Maximale Zeichenzahl pro E-Mail
+const MAX_CHARS = 40000;
 
 
-// ===================================
-// Text auf 90 Zeichen formatieren
-// ===================================
+// Text möglichst an Leerzeichen aufteilen
+function splitText(text, maxChars) {
 
-function formatText(text) {
+    const parts = [];
 
-    const paragraphs = text.split("\n");
+    while (text.length > maxChars) {
 
-    let result = [];
+        let position = text.lastIndexOf(" ", maxChars);
 
-    for (let paragraph of paragraphs) {
-
-        if (paragraph === "") {
-            result.push("");
-            continue;
+        // Falls kein Leerzeichen gefunden wird
+        if (position === -1) {
+            position = maxChars;
         }
 
-        const tokens =
-            paragraph.match(/(\t+| +|\S+)/g) || [];
+        parts.push(text.slice(0, position));
 
-        let line = "";
-        let lineLength = 0;
-
-        for (let token of tokens) {
-
-            const tokenLength =
-                token.startsWith("\t")
-                ? token.length * 4
-                : token.length;
-
-            if (lineLength + tokenLength <= MAX_CHARS) {
-
-                line += token;
-                lineLength += tokenLength;
-
-            } else {
-
-                // Leerzeichen am Zeilenanfang vermeiden
-                if (/^[ \t]+$/.test(token)) {
-
-                    if (line !== "") {
-                        result.push(line);
-                    }
-
-                    line = "";
-                    lineLength = 0;
-
-                } else {
-
-                    if (line !== "") {
-                        result.push(line);
-                    }
-
-                    line = token;
-                    lineLength = tokenLength;
-
-                }
-
-            }
-
-        }
-
-        result.push(line);
+        text = text.slice(position).trim();
 
     }
 
-    return result.join("\n");
-
-}
-
-
-// ===================================
-// Text in mehrere Teile aufteilen
-// ===================================
-
-function splitByLines(
-    text,
-    maxLength = MAX_MESSAGE_LENGTH
-) {
-
-    const lines = text.split("\n");
-
-    let parts = [];
-    let currentPart = "";
-
-    for (let line of lines) {
-
-        if (
-            currentPart.length +
-            line.length + 1 <= maxLength
-        ) {
-
-            currentPart += line + "\n";
-
-        } else {
-
-            parts.push(currentPart);
-
-            currentPart = line + "\n";
-
-        }
-
-    }
-
-    if (currentPart !== "") {
-        parts.push(currentPart);
+    // Rest hinzufügen
+    if (text.length > 0) {
+        parts.push(text);
     }
 
     return parts;
+}
+
+
+// Mehrere E-Mails versenden
+async function sendLargeText(text) {
+
+    const parts = splitText(text, MAX_CHARS);
+
+    for (let i = 0; i < parts.length; i++) {
+
+        await emailjs.send(
+            "service_godqvsl",
+            "template_b2cit9p",
+            {
+                message: parts[i],
+                part: i + 1,
+                total_parts: parts.length
+            }
+        );
+
+    }
 
 }
 
 
-// ===================================
-// Save-Button
-// ===================================
+// Beim Klick auf den Save-Button
+document.getElementById("save").addEventListener("click", async function () {
 
-document.getElementById("save")
-.addEventListener("click", function () {
+    const text = document.getElementById("editor").value;
 
-    // Originaltext holen
-    const originalText = editor.value;
+    // Prüfen, ob Text vorhanden ist
+    if (text.trim() === "") {
+        alert("Bitte zuerst einen Text eingeben.");
+        return;
+    }
 
-    // Formatieren
-    const formattedText =
-        formatText(originalText);
+    // Button während des Speicherns deaktivieren
+    const button = document.getElementById("save");
+    button.disabled = true;
+    button.textContent = "Speichert...";
 
-    // Aufteilen
-    const parts =
-        splitByLines(formattedText);
+    try {
 
+        await sendLargeText(text);
 
-    // Maximal 10 Teile
-    const templateParams = {
+        alert("Der Text wurde erfolgreich gespeichert.");
 
-        message1: parts[0] || "",
-        message2: parts[1] || "",
-        message3: parts[2] || "",
-        message4: parts[3] || "",
-        message5: parts[4] || "",
-        message6: parts[5] || "",
-        message7: parts[6] || "",
-        message8: parts[7] || "",
-        message9: parts[8] || "",
-        message10: parts[9] || ""
+    } catch (error) {
 
-    };
+        console.error(error);
+        alert("Fehler beim Speichern des Textes.");
 
+    } finally {
 
-    // E-Mail verschicken
-    emailjs.send(
+        button.disabled = false;
+        button.textContent = "Save";
 
-        "service_godqvsl",
-        "template_b2cit9p",
-        templateParams
-
-    )
-
-    .then(() => {
-
-        alert(
-            "Text wurde erfolgreich gespeichert."
-        );
-
-    })
-
-    .catch((error) => {
-
-        console.log(error);
-
-        alert(
-
-            "Fehler:\n\n" +
-
-            "Status: " +
-            error.status +
-
-            "\n\n" +
-
-            error.text
-
-        );
-
-    });
+    }
 
 });
