@@ -9,7 +9,7 @@ body{
     flex-direction:column;
 }
 
-#editor{
+editor{
     flex:1;
     padding:20px;
     font-size:20px;
